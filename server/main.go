@@ -11,6 +11,7 @@ import (
 )
 
 const creatureSubscription = "creatures"
+const settingsSubscription = "settings"
 
 type WSServer struct {
 	node *centrifuge.Node
@@ -43,15 +44,22 @@ func InitWeb() *WSServer {
 		client.OnSubscribe(func(e centrifuge.SubscribeEvent, cb centrifuge.SubscribeCallback) {
 			log.Printf("client subscribes on channel %s", e.Channel)
 			cb(centrifuge.SubscribeReply{}, nil)
-			state, err := server.GetState()
-			if err != nil {
-				log.Println(err)
+			switch e.Channel {
+			case creatureSubscription:
+				state, err := server.GetState()
+				if err != nil {
+					log.Println(err)
+				}
+				stateBytes, err := json.Marshal(state)
+				if err != nil {
+					log.Println(err)
+				}
+				node.Publish(creatureSubscription, stateBytes)
+			case settingsSubscription:
+				// TODO
+			default:
+				// TODO
 			}
-			stateBytes, err := json.Marshal(state)
-			if err != nil {
-				log.Println(err)
-			}
-			node.Publish(creatureSubscription, stateBytes)
 		})
 		client.OnDisconnect(func(e centrifuge.DisconnectEvent) {
 			log.Printf("client disconnected")
